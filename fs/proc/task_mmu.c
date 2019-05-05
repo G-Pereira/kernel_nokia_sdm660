@@ -143,7 +143,7 @@ static void seq_print_vma_name(struct seq_file *m, struct vm_area_struct *vma)
 		struct page *page;
 
 		pages_pinned = get_user_pages(current, mm, page_start_vaddr,
-				1, 0, &page, NULL);
+				1, 0, 0, &page, NULL);
 		if (pages_pinned < 1) {
 			seq_puts(m, "<fault>]");
 			return;
@@ -1391,6 +1391,10 @@ out:
 static int pagemap_open(struct inode *inode, struct file *file)
 {
 	struct mm_struct *mm;
+
+	/* do not disclose physical addresses: attack vector */
+	if (!capable(CAP_SYS_ADMIN))
+		return -EPERM;
 
 	mm = proc_mem_open(inode, PTRACE_MODE_READ);
 	if (IS_ERR(mm))
